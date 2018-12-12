@@ -1,0 +1,39 @@
+
+####################	Requirements!	####################
+					####################	docker must be run with expremential features for "swarm deploy stack" to work
+edit /etc/docker/daemon.json		####################	debian-based distro
+{"experimental":true}
+
+consider sudo
+
+
+####################    check cluster status   ####################
+
+source mysql-shell.env
+sudo docker exec -it $(sudo docker ps|grep mysql-server-1|awk '{print $1}') mysqlsh "$MYSQL_USER@$MYSQL_HOST:$MYSQL_PORT" --dbpassword="$MYSQL_PASSWORD"
+
+var dbPass = "mysql"
+var clusterName = "ClusterX"
+var cluster = dba.getCluster(clusterName);
+cluster.status()	####################	check all nodes are R/W
+
+####################	check mysql router connect to all nodes(multi-primary)	####################
+sudo docker exec -it $(sudo docker ps|grep mysql-server-1|awk '{print $1}')
+####################	run this command multiple time to see each time it's connect to different host
+mysql -uroot -pmysql -P6446 -hmysql-router -e "select @@hostname" bash
+
+
+####################################################################################################
+Steps:
+cd to extracted directory
+####################	compose
+docker-compose up -d
+####################	swarm
+docker deploy -c docker-compose.yml innodbcluster
+
+
+####################	after everything works find, delete innodbcluster_mysql-shell
+docker service rm innodbcluster_mysql-shell
+####################################################################################################
+####################	if you want to cleanup
+docker stack rm innodbcluster
